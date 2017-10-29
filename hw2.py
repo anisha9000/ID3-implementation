@@ -7,6 +7,10 @@
 import sys
 import math
 import pandas as pd
+#new imports
+import numpy as np
+import scipy.stats as stats
+import math
 
 class DecisionNode:
 
@@ -45,6 +49,39 @@ def funTree():
     myTree.children['strong'] = DecisionNode('no')
     return myTree
 
+def calculateProbability(examples, target):
+    print("Inside calculateProbability")
+    targetLabels = examples[target].tolist()
+    labelCount = len(targetLabels)
+    if labelCount <= 1:
+        return []
+
+    probabilities = []
+    counts = stats.itemfreq(targetLabels)
+    
+    for row in range(0,counts.shape[0]):
+        probabilities.append([counts[row,0],int(counts[row,1])/labelCount])
+    print(probabilities)
+    return probabilities
+
+def getEntropy(examples, target):
+    print("Inside getEntropy")
+    probabilityList = calculateProbability(examples, target)
+    entropy = 0
+    for row in probabilityList:
+        logValue = math.log(row[1],2)
+        product = row[1]*logValue
+        entropy+=product
+    entropy = (-entropy)
+    print(entropy)
+    return entropy
+
+
+def getBestAttribute(examples, target, attributes):
+    baseProbability = getEntropy(examples, target);
+    
+    print(baseProbability)
+
 
 def id3(examples, target, attributes):
     print("id3 entry data:")
@@ -56,7 +93,10 @@ def id3(examples, target, attributes):
     print("")
     '''
     terminating condition goes here
+    1. create root node. get the unique value and assign it to leaf.
+    2. check if attributes is empty and create node with root.
     '''
+    bestAttribute = getBestAttribute(examples, target, attributes)
     tree = funTree()
     return tree
 

@@ -7,6 +7,7 @@
 import sys
 import math
 import pandas as pd
+
 #new imports
 import numpy as np
 import scipy.stats as stats
@@ -49,8 +50,8 @@ def funTree():
     myTree.children['strong'] = DecisionNode('no')
     return myTree
 
+# calculate p[i] of unique target values for the example set i
 def calculateProbability(examples, target):
-    #print("Inside calculateProbability")
     targetLabels = examples[target].tolist()
     labelCount = len(targetLabels)
     if labelCount <= 1:
@@ -61,11 +62,12 @@ def calculateProbability(examples, target):
     
     for row in range(0,counts.shape[0]):
         probabilities.append([counts[row,0],int(counts[row,1])/labelCount])
-    #print(probabilities)
+    
     return probabilities
 
+# calculate sum of (-p[i]*log(p[i])) for example set i
 def getEntropy(examples, target):
-    #print("Inside getEntropy")
+    # get list of p[i]
     probabilityList = calculateProbability(examples, target)
     entropy = 0
     for row in probabilityList:
@@ -73,14 +75,15 @@ def getEntropy(examples, target):
         product = row[1]*logValue
         entropy+=product
     entropy = (-entropy)
-    #print("entropy:"+ str(entropy))
     return entropy
 
-
+# get the best attribute for example set i, which has the maximum information gain
 def getBestAttribute(examples, target, attributes):
+    # Entropy(S)
     baseEntropy = getEntropy(examples, target);
     originalLength = len(examples)
     informationGain = []
+    
     #Divide instances based on attributes one by one to find best attribute
     for attribute in attributes:
         # group instances based on unique value
@@ -90,13 +93,12 @@ def getBestAttribute(examples, target, attributes):
         for key,exampleSubset in groupedData:
             del exampleSubset[attribute]
             entropyOfSubset = getEntropy(exampleSubset,target)
+            # sum of (|S[i]|/|S|) * Entropy(S[i])
             totalEntropy += (len(exampleSubset)/ originalLength)*entropyOfSubset
         #save the calculated entropy per attribute to determine best attribute
         informationGain.append([attribute,baseEntropy-totalEntropy])
         
-    #print(informationGain)
     bestAttribute = max(informationGain, key=lambda x: x[1])
-    
     return(bestAttribute[0])
 
 
@@ -108,6 +110,11 @@ def id3(examples, target, attributes):
     print(attributes)
     print(type(attributes))
     print("")
+    uniques = examples.apply(lambda x: x.nunique()).loc[target]
+    if uniques==1:
+        root = DecisionNode('humidity')
+    print(uniques)
+    print(type(uniques))
     '''
     terminating condition goes here
     1. create root node. get the unique value and assign it to leaf.
@@ -115,12 +122,18 @@ def id3(examples, target, attributes):
     '''
     bestAttribute = getBestAttribute(examples, target, attributes)
     groupedData = examples.groupby(bestAttribute)
-    for key,exampleSubset in groupedData:
-        print(exampleSubset)
-    
+    #create root node
     attributeRoot = DecisionNode(bestAttribute)
     
-    print()
+    for key,exampleSubset in groupedData:
+        print(exampleSubset)
+        print(key)
+        if len(exampleSubset) == 0:
+            # TODO fix to get max frequency
+            attributeRoot.children[key] = examples[target].iloc[1]
+        else:
+            attributeRoot.children[key] = id3(exampleSubset, target, attributes.remove(attributeRoot))
+
     '''
     myLeftTree = DecisionNode('humidity')
     myLeftTree.children['normal'] = DecisionNode('no')

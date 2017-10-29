@@ -50,7 +50,7 @@ def funTree():
     return myTree
 
 def calculateProbability(examples, target):
-    print("Inside calculateProbability")
+    #print("Inside calculateProbability")
     targetLabels = examples[target].tolist()
     labelCount = len(targetLabels)
     if labelCount <= 1:
@@ -61,11 +61,11 @@ def calculateProbability(examples, target):
     
     for row in range(0,counts.shape[0]):
         probabilities.append([counts[row,0],int(counts[row,1])/labelCount])
-    print(probabilities)
+    #print(probabilities)
     return probabilities
 
 def getEntropy(examples, target):
-    print("Inside getEntropy")
+    #print("Inside getEntropy")
     probabilityList = calculateProbability(examples, target)
     entropy = 0
     for row in probabilityList:
@@ -73,14 +73,31 @@ def getEntropy(examples, target):
         product = row[1]*logValue
         entropy+=product
     entropy = (-entropy)
-    print(entropy)
+    #print("entropy:"+ str(entropy))
     return entropy
 
 
 def getBestAttribute(examples, target, attributes):
-    baseProbability = getEntropy(examples, target);
+    baseEntropy = getEntropy(examples, target);
+    originalLength = len(examples)
+    informationGain = []
+    #Divide instances based on attributes one by one to find best attribute
+    for attribute in attributes:
+        # group instances based on unique value
+        groupedData = examples.groupby(attribute)
+        totalEntropy = 0
+        #entropy for each value of attribute
+        for key,exampleSubset in groupedData:
+            del exampleSubset[attribute]
+            entropyOfSubset = getEntropy(exampleSubset,target)
+            totalEntropy += (len(exampleSubset)/ originalLength)*entropyOfSubset
+        #save the calculated entropy per attribute to determine best attribute
+        informationGain.append([attribute,baseEntropy-totalEntropy])
+        
+    #print(informationGain)
+    bestAttribute = max(informationGain, key=lambda x: x[1])
     
-    print(baseProbability)
+    return(bestAttribute[0])
 
 
 def id3(examples, target, attributes):
@@ -97,6 +114,21 @@ def id3(examples, target, attributes):
     2. check if attributes is empty and create node with root.
     '''
     bestAttribute = getBestAttribute(examples, target, attributes)
+    groupedData = examples.groupby(bestAttribute)
+    for key,exampleSubset in groupedData:
+        print(exampleSubset)
+    
+    attributeRoot = DecisionNode(bestAttribute)
+    
+    print()
+    '''
+    myLeftTree = DecisionNode('humidity')
+    myLeftTree.children['normal'] = DecisionNode('no')
+    myLeftTree.children['high'] = DecisionNode('yes')
+    myTree = DecisionNode('wind')
+    myTree.children['weak'] = myLeftTree
+    myTree.children['strong'] = DecisionNode('no')
+    '''
     tree = funTree()
     return tree
 

@@ -103,47 +103,30 @@ def getBestAttribute(examples, target, attributes):
 
 
 def id3(examples, target, attributes):
-    print("id3 entry data:")
-    print(type(examples))
-    print(examples)
-    print(target)
-    print(attributes)
-    print(type(attributes))
-    print("")
     uniques = examples.apply(lambda x: x.nunique()).loc[target]
     if uniques==1:
-        root = DecisionNode('humidity')
-    print(uniques)
-    print(type(uniques))
-    '''
-    terminating condition goes here
-    1. create root node. get the unique value and assign it to leaf.
-    2. check if attributes is empty and create node with root.
-    '''
+        return DecisionNode(examples[target].iloc[0])
+    if len(attributes) == 0:
+        item_counts = examples[target].value_counts()
+        max_item = item_counts.idxmax()
+        return DecisionNode(max_item)
+    
     bestAttribute = getBestAttribute(examples, target, attributes)
+    attributes.remove(bestAttribute)
     groupedData = examples.groupby(bestAttribute)
     #create root node
     attributeRoot = DecisionNode(bestAttribute)
     
     for key,exampleSubset in groupedData:
-        print(exampleSubset)
-        print(key)
         if len(exampleSubset) == 0:
             # TODO fix to get max frequency
-            attributeRoot.children[key] = examples[target].iloc[1]
+            item_counts = exampleSubset[target].value_counts()
+            max_item = item_counts.idxmax()
+            attributeRoot.children[key] = DecisionNode(max_item)
         else:
-            attributeRoot.children[key] = id3(exampleSubset, target, attributes.remove(attributeRoot))
+            attributeRoot.children[key] = id3(exampleSubset.drop([bestAttribute],axis=1), target, attributes)
 
-    '''
-    myLeftTree = DecisionNode('humidity')
-    myLeftTree.children['normal'] = DecisionNode('no')
-    myLeftTree.children['high'] = DecisionNode('yes')
-    myTree = DecisionNode('wind')
-    myTree.children['weak'] = myLeftTree
-    myTree.children['strong'] = DecisionNode('no')
-    '''
-    tree = funTree()
-    return tree
+    return attributeRoot
 
 
 ####################   MAIN PROGRAM ######################
